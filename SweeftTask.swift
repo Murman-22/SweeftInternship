@@ -10,16 +10,22 @@ import Foundation
 //  1. გვაქვს 1,5,10,20 და 50 თეთრიანი მონეტები. დაწერეთ ფუნქცია, რომელსაც გადაეცემა თანხა (თეთრებში) და აბრუნებს მონეტების
 //      მინიმალურ რაოდენობას, რომლითაც შეგვიძლია ეს თანხა დავახურდაოთ.
 
-func minSplit(amount: Int, usingCoins coins: Set<Int> = [1, 5, 10, 20, 50]) -> Int {
-    // return 50
+enum CoinChangeError: Error {
+    case invalidAmount
+    case unableToReturnChange
+}
+
+func minSplit(amount: Int, usingCoins coins: Set<Int> = [1, 5, 10, 20, 50]) throws -> Int {
     // ვრწმუნდებით, რომ მოთხოვნილი თანხა ვალიდურია
-    guard amount > 0 else { return 0 }
+    if amount < 0 { throw CoinChangeError.invalidAmount }
+    // თუ დასაბრუნებელი თანხა 0-ია, მის დაბრუნებას 0 მონეტა ესაჭიროება.
+    if amount == 0 { return 0 }
     
     var coinsCount = 0
     
     // იტერაციების რაოდენობის დაზოგვის მიზნით ვშლით გამოუყენებად და არავალიდურ მონეტებს
     let relevantCoins = coins.filter { $0 <= amount && $0 > 0 }
-    guard relevantCoins.isEmpty == false else { return 0 } // nil აჯობებდა
+    if relevantCoins.isEmpty { throw CoinChangeError.unableToReturnChange }
     
     // cache მონეტების კომბინირებისას დუბლირებული ნაშთების პრევენციისთვის
     var duplicationPreventionCache: Set<Int> = [amount]
@@ -47,9 +53,9 @@ func minSplit(amount: Int, usingCoins coins: Set<Int> = [1, 5, 10, 20, 50]) -> I
             }
         }
         
-        // newMinuends ცარიელია, როდესაც წინამდებარე იტერაციის შედეგად ვერ მივიღეთ უნიკალური დადებითი ნაშთ(ებ)ი
+        // newMinuends ცარიელია, როდესაც მიმდინარე იტერაციის შედეგად ვერ მივიღეთ უნიკალური დადებითი ნაშთ(ებ)ი
         if newMinuends.isEmpty {
-            return 0
+            throw CoinChangeError.unableToReturnChange
         } else {
             coinMinuends = newMinuends
         }
@@ -59,7 +65,11 @@ func minSplit(amount: Int, usingCoins coins: Set<Int> = [1, 5, 10, 20, 50]) -> I
 }
 /// დავალების მაგალითებში მოცემულ სინტაქსთან თავსებადობა
 func minSplit(_ amount: Int) -> Int {
-    minSplit(amount: amount)
+    do {
+        return try minSplit(amount: amount)
+    } catch {
+        return -1
+    }
 }
 
 
@@ -83,7 +93,7 @@ extension Int {
     }
 }
 func sumOfDigits(start: Int,  end: Int) -> Int {
-    guard start < end else { return 0 }
+    guard start <= end else { return 0 }
     let numbersRange = start...end
     let rangeElementsDigitsSum = numbersRange.reduce(into: 0) {
         $0 += $1.digitsSum
